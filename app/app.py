@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from app.routes import auth
+from app.routes import auth, chat
 
 app = FastAPI()
 
@@ -23,3 +23,4 @@ def home():
 
 app.include_router(auth.route, prefix="/auth")
 
+app.include_router(chat.route, prefix="/chat")

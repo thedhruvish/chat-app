@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Chat with User Count</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 h-screen m-0">
+
+  <!-- Chat Container -->
+  <div class="flex flex-col h-screen">
+
+    <!-- Header with DP and Status -->
+    <div class="flex items-center justify-between px-4 py-3 bg-green-600 text-white shadow">
+      <div class="flex items-center">
+        <img src="https://via.placeholder.com/40" alt="User DP" class="w-10 h-10 rounded-full mr-3" id="user-dp" />
+        <div>
+          <div class="font-semibold text-lg" id="user-name">User</div>
+          <div id="status" class="text-sm text-green-100">Connecting...</div>
+        </div>
+      </div>
+      <div id="user-count" class="text-sm text-green-100">Users Online: 0</div>
+    </div>
+
+    <!-- Chat Messages Box -->
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-200"></div>
+
+    <!-- Input Box -->
+    <form id="chat-form" class="flex p-4 bg-white border-t">
+      <input id="message-input" type="text" placeholder="Type a message..."
+        class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+      <button type="submit" class="ml-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full transition">
+        Send
+      </button>
+    </form>
+
+  </div>
+
+  <!-- WebSocket Script -->
+  <script>
+    const ws = new WebSocket(`ws://localhost:8000/chat/`);
+    let client_id = null;
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("message-input");
+    const chatBox = document.getElementById("chat-box");
+    const status = document.getElementById("status");
+    const userCount = document.getElementById("user-count");
+    const userDp = document.getElementById("user-dp");
+    const userName = document.getElementById("user-name");
+
+    ws.onopen = () => {
+      status.textContent = "Online";
+      status.classList.add("text-green-300");
+    };
+
+    ws.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+        console.log(data);
+      } catch {
+        displayMessage(event.data, "bot");
+        return;
+      }
+
+      if (data.type === "init") {
+        client_id = data.client_id;
+        console.log("Assigned client ID:", client_id);
+      } else if (data.type === "user_count") {
+        userCount.textContent = `Users Online: ${data.count}`;
+        userDp.src = data.dp_img;
+        userName.textContent = data.user_name;
+      } else if (data.message) {
+        displayMessage(data.message, "bot", data.img_like);
+      }
+    };
+
+    ws.onerror = () => {
+      status.textContent = "Connection Error";
+      status.classList.replace("text-green-100", "text-red-400");
+    };
+
+    ws.onclose = () => {
+      status.textContent = "Disconnected";
+      status.classList.replace("text-green-100", "text-gray-400");
+    };
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+
+      displayMessage(message, "user");
+      ws.send(JSON.stringify({ client_id, message }));
+      input.value = "";
+    });
+
+    function displayMessage(message, sender, img_Like = "") {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = sender === "user" ? "flex justify-end items-start" : "flex items-start";
+      messageDiv.innerHTML = sender === "user"
+        ? `<div class="bg-green-500 text-white p-3 rounded-xl shadow max-w-xs">${message}</div>`
+        : `<img src="${img_Like}" alt="Bot DP" class="w-9 h-9 rounded-full mr-2" />
+           <div class="bg-white p-3 rounded-xl shadow max-w-xs text-gray-800">${message}</div>`;
+
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
+
+</body>
+
+</html>
