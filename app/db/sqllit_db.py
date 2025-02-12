@@ -12,8 +12,12 @@ class Connection:
 		self.cursor.execute(
 			"""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+						g_id TEXT NOT NULL,
             name TEXT NOT NULL,
+						email TEXT NOT NULL UNIQUE,
+						given_name TEXT NULL,
+						picture TEXT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
@@ -21,7 +25,7 @@ class Connection:
 		self.cursor.execute(
 			"""
         CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             message TEXT NOT NULL,
             user_id INTEGER NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -2,26 +2,47 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>WebSocket Chat with User Count</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-100 h-screen m-0">
-
   <!-- Chat Container -->
   <div class="flex flex-col h-screen">
-
+    <!-- Header with DP and Status -->
     <!-- Header with DP and Status -->
     <div class="flex items-center justify-between px-4 py-3 bg-green-600 text-white shadow">
       <div class="flex items-center">
-        <img src="https://via.placeholder.com/40" alt="User DP" class="w-10 h-10 rounded-full mr-3" id="user-dp" />
+        <img src="{{ user.picture | default('https://api.dicebear.com/7.x/personas/svg')  }}" alt="User DP"
+          class="w-10 h-10 rounded-full mr-3" />
         <div>
-          <div class="font-semibold text-lg" id="user-name">User</div>
+          <div class="font-semibold text-lg" id="user-name">
+            {{ user.name | default("Anonymousssss") }}
+          </div>
           <div id="status" class="text-sm text-green-100">Connecting...</div>
         </div>
       </div>
-      <div id="user-count" class="text-sm text-green-100">Users Online: 0</div>
+
+      <!-- Right Side: User Count + Login -->
+      <div class="flex items-center space-x-4">
+        <div id="user-count" class="text-sm text-green-100">
+          Users Online: 0
+        </div>
+        {% if user %}
+        <button
+          class="bg-white text-green-600 hover:bg-green-100 px-4 py-1 rounded-full text-sm font-medium transition duration-200"
+          onclick="location.href='/auth/logout'">
+          Logout
+        </button>
+        {% else %}
+        <button
+          class="bg-white text-green-600 hover:bg-green-100 px-4 py-1 rounded-full text-sm font-medium transition duration-200"
+          onclick="location.href='/auth/login'">
+          Login
+        </button>
+        {% endif %}
+      </div>
     </div>
 
     <!-- Chat Messages Box -->
@@ -35,7 +56,6 @@
         Send
       </button>
     </form>
-
   </div>
 
   <!-- WebSocket Script -->
@@ -47,8 +67,6 @@
     const chatBox = document.getElementById("chat-box");
     const status = document.getElementById("status");
     const userCount = document.getElementById("user-count");
-    const userDp = document.getElementById("user-dp");
-    const userName = document.getElementById("user-name");
 
     ws.onopen = () => {
       status.textContent = "Online";
@@ -59,21 +77,22 @@
       let data;
       try {
         data = JSON.parse(event.data);
-        console.log(data);
       } catch {
         displayMessage(event.data, "bot");
         return;
       }
-
+      
+      console.log(data);
       if (data.type === "init") {
         client_id = data.client_id;
         console.log("Assigned client ID:", client_id);
       } else if (data.type === "user_count") {
         userCount.textContent = `Users Online: ${data.count}`;
-        userDp.src = data.dp_img;
-        userName.textContent = data.user_name;
-      } else if (data.message) {
-        displayMessage(data.message, "bot", data.img_like);
+      } else if (data.type === "info") {
+        displayMessage(data.message, "bot", data.img_like, info = true,email=data.email);
+      }
+      else if (data.message) {
+        displayMessage(data.message, "bot", data.img_like,email=data.email);
       }
     };
 
@@ -97,19 +116,43 @@
       input.value = "";
     });
 
-    function displayMessage(message, sender, img_Like = "") {
+    function displayMessage(message, sender, img_Like = "", email = "demo@gmail.com", info = false) {
       const messageDiv = document.createElement("div");
-      messageDiv.className = sender === "user" ? "flex justify-end items-start" : "flex items-start";
-      messageDiv.innerHTML = sender === "user"
-        ? `<div class="bg-green-500 text-white p-3 rounded-xl shadow max-w-xs">${message}</div>`
-        : `<img src="${img_Like}" alt="Bot DP" class="w-9 h-9 rounded-full mr-2" />
-           <div class="bg-white p-3 rounded-xl shadow max-w-xs text-gray-800">${message}</div>`;
+      console.log(email)
+
+      // Set container class
+      messageDiv.className =
+        sender === "user"
+          ? "flex justify-end items-start"
+          : "flex items-start";
+
+      // Set message bubble style based on 'info' flag
+      const bubbleClass = info
+        ? "bg-yellow-300 text-gray-900"
+        : sender === "user"
+          ? "bg-green-500 text-white"
+          : "bg-white text-gray-800";
+
+      // Set inner HTML
+      if (sender === "user") {
+        messageDiv.innerHTML = `
+      <div class="${bubbleClass} p-3 rounded-xl shadow max-w-xs">${message}</div>`;
+      } else {
+        messageDiv.innerHTML = `
+      <div class="flex flex-col items-start ">
+        <div class="text-xs text-gray-600 mb-1 ml-1">${email.toString()}</div>
+        <div class="flex items-start">
+          <img src="${img_Like}" alt="Bot DP" class="w-9 h-9 rounded-full mr-2" />
+          <div class="${bubbleClass} p-3 rounded-xl shadow max-w-xs">${message}</div>
+        </div>
+      </div>`;
+      }
 
       chatBox.appendChild(messageDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
-  </script>
 
+  </script>
 </body>
 
 </html>

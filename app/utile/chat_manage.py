@@ -27,8 +27,6 @@ class ConnectionManager:
 			{
 				"type": "user_count",
 				"count": len(self.active_connections),
-				"dp_img": "https://fastapi.tiangolo.com/img/favicon.png",
-				"user_name": "FastAPI",
 			}
 		)
 		for connection in self.active_connections:

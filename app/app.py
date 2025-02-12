@@ -30,7 +30,7 @@ app.add_middleware(SessionMiddleware, secret_key="!secret")
 
 @app.get("/", response_class=RedirectResponse)
 def home():
-	return RedirectResponse("/auth")
+	return RedirectResponse("/chat")
 
 
 app.include_router(auth.route, prefix="/auth")

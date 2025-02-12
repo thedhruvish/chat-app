@@ -10,5 +10,7 @@ wheels/
 .venv
 .env
 
+.ruff_cache
+
 #db
 chat.db
